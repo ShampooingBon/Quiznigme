@@ -1,5 +1,3 @@
-import { francais } from '../src/data/francais';
-import { enigmes } from '../src/data/enigmes';
 import { getLevels } from '../src/engine';
 import type { Category, Difficulty } from '../src/data/types';
 
