@@ -18,9 +18,37 @@ const fromRows = (rows: Row[]): Question[] => rows.map(r => {
 
 // ---------- Mathématiques : générées par niveau (difficulté croissante) ----------
 const ri = (r: () => number, a: number, b: number) => a + Math.floor(r() * (b - a + 1));
+
+/** Niveaux 26 à 50 des maths (j = 0 à 24). */
+function extra(d: Difficulty, j: number, r: () => number): [string, number] {
+  if (d === 'facile') {
+    if (j < 6) { const a = ri(r, 10, 30), b = ri(r, 5, 25); return [`${a} + ${b} = ?`, a + b]; }
+    if (j < 12) { const a = ri(r, 20, 50), b = ri(r, 5, 19); return [`${a} − ${b} = ?`, a - b]; }
+    if (j < 18) { const a = ri(r, 2, 10), b = ri(r, 2, 10); return [`${a} × ${b} = ?`, a * b]; }
+    if (j < 22) { const b = ri(r, 2, 5), c = ri(r, 2, 10); return [`${b * c} ÷ ${b} = ?`, c]; }
+    const n = ri(r, 6, 30); return [`Quel est le double de ${n} ?`, 2 * n];
+  }
+  if (d === 'moyen') {
+    if (j < 6) { const a = ri(r, 100, 500), b = ri(r, 50, 300); return [`${a} + ${b} = ?`, a + b]; }
+    if (j < 12) { const a = ri(r, 200, 900), b = ri(r, 50, 199); return [`${a} − ${b} = ?`, a - b]; }
+    if (j < 18) { const a = ri(r, 11, 19), b = ri(r, 3, 9); return [`${a} × ${b} = ?`, a * b]; }
+    if (j < 22) { const b = ri(r, 6, 12), c = ri(r, 6, 15); return [`${b * c} ÷ ${b} = ?`, c]; }
+    const L = ri(r, 4, 15), l = ri(r, 2, L - 1);
+    return [`Quelle est l'aire d'un rectangle de ${L} cm sur ${l} cm ? (en cm²)`, L * l];
+  }
+  if (j < 6) { const a = ri(r, 3, 12), b = ri(r, 3, 12), c = ri(r, 3, 12), e = ri(r, 3, 12); return [`${a} × ${b} + ${c} × ${e} = ?`, a * b + c * e]; }
+  if (j < 12) { const x = ri(r, 5, 20), a = ri(r, 2, 9), b = ri(r, 1, 10); return [`Si ${a}x − ${b} = ${a * x - b}, que vaut x ?`, x]; }
+  if (j < 17) { const p = [5, 10, 15, 30, 75][j % 5], n = ri(r, 2, 20) * 20; return [`Combien font ${p} % de ${n} ?`, (n * p) / 100]; }
+  if (j < 21) { const a = ri(r, 3, 9); return [`Combien font ${a}³ ?`, a ** 3]; }
+  if (j < 24) { const L = ri(r, 5, 30), l = ri(r, 2, L - 1); return [`Quel est le périmètre d'un rectangle de ${L} cm sur ${l} cm ? (en cm)`, 2 * (L + l)]; }
+  const m = ri(r, 5, 40), k = ri(r, 1, m - 1);
+  return [`Quelle est la moyenne de ${m - k}, ${m} et ${m + k} ?`, m];
+}
+
 function mathsLevel(d: Difficulty, i: number): Question {
   const r = rng(hash(d) + i * 977); let q = ''; let ans = 0;
-  if (d === 'facile') {
+  if (i >= 25) [q, ans] = extra(d, i - 25, r);
+  else if (d === 'facile') {
     const m = 5 + i;
     if (i < 8) { const a = ri(r, 1, m), b = ri(r, 1, m); q = `${a} + ${b} = ?`; ans = a + b; }
     else if (i < 14) { const a = ri(r, 5, m + 5), b = ri(r, 1, a - 1); q = `${a} − ${b} = ?`; ans = a - b; }
