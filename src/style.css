@@ -3,10 +3,12 @@
 body{margin:0;font-family:'Fredoka',system-ui,sans-serif;background:var(--bg);color:var(--indigo-d);min-height:100vh}
 [hidden]{display:none!important}
 #splash{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;background:var(--indigo);padding:20px}
-#splash img{width:min(440px,88vw);border-radius:32px;box-shadow:0 14px 40px #0004}
+#splash img{width:auto;max-width:88vw;max-height:66vh;border-radius:32px;box-shadow:0 14px 40px #0004}
 #splash .btn{width:min(280px,80vw);background:#fff;color:var(--indigo);font-size:1.5rem}
 main{max-width:560px;margin:0 auto;padding:16px 16px 40px;display:flex;flex-direction:column;align-items:center;gap:12px}
 #cat{width:min(230px,52vw)}
+html[data-season=halloween] #cat{width:min(250px,54vw)}
+html[data-season=noel] #cat{width:min(215px,50vw)}
 .catbox{position:relative;aspect-ratio:750/820}
 .catbox img,.catbox svg{position:absolute;inset:0;width:100%;height:100%;user-select:none}
 #bubble{position:relative;margin:6px 0 0;min-height:3.4em;padding:14px 20px;background:#fff;border:3px solid var(--indigo);border-radius:22px;font-size:1.25rem;font-weight:600;text-align:center;width:100%;cursor:pointer;display:flex;align-items:center;justify-content:center}
