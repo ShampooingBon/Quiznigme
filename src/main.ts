@@ -5,16 +5,20 @@ import gsap from 'gsap';
 import { Mascot, wait } from './mascot';
 import { sfx, sound } from './audio';
 import { Category, Difficulty, MAX_LEVELS } from './data/types';
+import { currentTheme } from './seasons';
 import { getLevels, getProgress, saveResult } from './engine';
 
-const LOGO = `${import.meta.env.BASE_URL}logo.jpg`;
+const theme = currentTheme();
+const LOGO = `${import.meta.env.BASE_URL}${theme.logo}`;
+document.documentElement.dataset.season = theme.season;
+document.querySelector<HTMLLinkElement>('link[rel=icon]')?.setAttribute('href', LOGO);
 const app = document.getElementById('app')!;
 app.innerHTML = `
 <div id="splash"><img src="${LOGO}" alt="Quiznigme" /><button class="btn indigo" id="go">Jouer</button></div>
 <main id="game" hidden><div id="cat"></div><p id="bubble" aria-live="polite"></p><p id="bar"></p><section id="stage"></section></main>
 <button id="mute" aria-label="Activer ou couper le son">🔊</button>`;
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
-const mascot = new Mascot($('cat'));
+const mascot = new Mascot($('cat'), theme);
 const bubble = $('bubble'), stage = $('stage'), bar = $('bar');
 bubble.onclick = () => mascot.skip();
 $('mute').onclick = () => { sound.muted = !sound.muted; $('mute').textContent = sound.muted ? '🔇' : '🔊'; };
