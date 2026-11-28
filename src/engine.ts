@@ -1,6 +1,8 @@
-import { Category, Difficulty, MAX_LEVELS, Question } from './data/types';
+import { Category, Difficulty, Question, levelCount } from './data/types';
 import { francais } from './data/francais';
+import { francaisPlus } from './data/francais-plus';
 import { enigmes } from './data/enigmes';
+import { enigmesPlus } from './data/enigmes-plus';
 import type { Row } from './data/francais';
 
 /** Générateur pseudo-aléatoire déterministe : un niveau donne toujours la même question. */
@@ -45,9 +47,39 @@ function extra(d: Difficulty, j: number, r: () => number): [string, number] {
   return [`Quelle est la moyenne de ${m - k}, ${m} et ${m + k} ?`, m];
 }
 
-function mathsLevel(d: Difficulty, i: number): Question {
-  const r = rng(hash(d) + i * 977); let q = ''; let ans = 0;
-  if (i >= 25) [q, ans] = extra(d, i - 25, r);
+/** Niveaux 51 à 75 des maths (j = 0 à 24). */
+function extra2(d: Difficulty, j: number, r: () => number): [string, number] {
+  if (d === 'facile') {
+    if (j < 5) { const a = ri(r, 1, 20), b = ri(r, 1, 20), c = ri(r, 1, 20); return [`${a} + ${b} + ${c} = ?`, a + b + c]; }
+    if (j < 10) { const a = ri(r, 10, 40), b = ri(r, 5, 30); return [`Léo a ${a} billes et en gagne ${b}. Combien en a-t-il maintenant ?`, a + b]; }
+    if (j < 15) { const a = ri(r, 20, 60), b = ri(r, 5, a - 5); return [`Il y a ${a} bonbons. On en mange ${b}. Combien en reste-t-il ?`, a - b]; }
+    if (j < 20) { const n = ri(r, 2, 6), k = ri(r, 2, 10); return [`Il y a ${n} sachets de ${k} bonbons. Combien de bonbons en tout ?`, n * k]; }
+    if (j < 23) { const b = ri(r, 2, 5), c = ri(r, 2, 10); return [`${b * c} bonbons sont partagés entre ${b} enfants. Combien chacun en reçoit-il ?`, c]; }
+    const s = ri(r, 1, 20), st = ri(r, 2, 9);
+    return [`Quel nombre continue la suite : ${s}, ${s + st}, ${s + 2 * st}, ${s + 3 * st}, ?`, s + 4 * st];
+  }
+  if (d === 'moyen') {
+    if (j < 5) { const a = ri(r, 3, 9), b = ri(r, 3, 9), c = ri(r, 1, 30); return [`${a} × ${b} + ${c} = ?`, a * b + c]; }
+    if (j < 10) { const n = ri(r, 4, 30); return [`Quel est le tiers de ${3 * n} ?`, n]; }
+    if (j < 15) { const n = ri(r, 3, 9), p = ri(r, 2, 9); return [`Léa achète ${n} cahiers à ${p} € pièce. Combien paie-t-elle ? (en €)`, n * p]; }
+    if (j < 19) { const h = ri(r, 1, 3), m = 5 * ri(r, 1, 11); return [`Un film dure ${h} h ${m} min. Combien cela fait-il de minutes ?`, 60 * h + m]; }
+    if (j < 23) { const c = ri(r, 3, 25); return [`Quel est le périmètre d'un triangle équilatéral de côté ${c} cm ? (en cm)`, 3 * c]; }
+    const a = ri(r, 12, 30), b = ri(r, 3, 6); return [`Combien font ${a} × ${b} ?`, a * b];
+  }
+  if (j < 5) { const a = ri(r, 3, 15), b = ri(r, 3, 15), c = ri(r, 2, 9); return [`(${a} + ${b}) × ${c} = ?`, (a + b) * c]; }
+  if (j < 10) { const a = ri(r, 2, 9), k = ri(r, 2, 15), b = ri(r, 1, 20); return [`Si x ÷ ${a} + ${b} = ${k + b}, que vaut x ?`, a * k]; }
+  if (j < 15) { const p = ri(r, 2, 20) * 20, rd = [10, 25, 50, 20][j % 4]; return [`Un article à ${p} € est vendu avec ${rd} % de réduction. Quel est le prix final ? (en €)`, (p * (100 - rd)) / 100]; }
+  if (j < 19) { const a = ri(r, 3, 12), b = ri(r, 3, 12); return [`Combien font ${a}² + ${b}² ?`, a * a + b * b]; }
+  if (j < 22) { const n = ri(r, 6, 25); return [`Quelle est la racine carrée de ${n * n} ?`, n]; }
+  if (j < 24) { const m = ri(r, 10, 50), k = ri(r, 1, 9), l = ri(r, 1, 9); return [`Quelle est la moyenne de ${m - k}, ${m + k}, ${m - l} et ${m + l} ?`, m]; }
+  const v = 10 * ri(r, 4, 12), t = ri(r, 2, 6);
+  return [`Une voiture roule à ${v} km/h pendant ${t} h. Quelle distance parcourt-elle ? (en km)`, v * t];
+}
+
+function mathsLevel(d: Difficulty, i: number, salt = 0): Question {
+  const r = rng(hash(d) + i * 977 + salt * 7919); let q = ''; let ans = 0;
+  if (i >= 50) [q, ans] = extra2(d, i - 50, r);
+  else if (i >= 25) [q, ans] = extra(d, i - 25, r);
   else if (d === 'facile') {
     const m = 5 + i;
     if (i < 8) { const a = ri(r, 1, m), b = ri(r, 1, m); q = `${a} + ${b} = ?`; ans = a + b; }
@@ -75,29 +107,50 @@ function mathsLevel(d: Difficulty, i: number): Question {
   return { q, choices, a: choices.indexOf(String(ans)) };
 }
 
+/** « 1 + 2 » et « 2 + 1 » (ou « 3 × 4 » et « 4 × 3 ») donnent la même clé. */
+const canon = (q: string) => q.replace(/^(\d+) ([+×]) (\d+) = \?$/, (_, a, o, b) => {
+  const [m, n] = [+a, +b].sort((u, v) => u - v); return `${m} ${o} ${n}`;
+});
+/** Niveaux de maths d'une difficulté, sans doublon ni question équivalente. */
+function mathsList(d: Difficulty): Question[] {
+  const seen = new Set<string>();
+  return Array.from({ length: levelCount('maths') }, (_, i) => {
+    let q = mathsLevel(d, i, 0);
+    for (let s = 1; s < 80 && seen.has(canon(q.q)); s++) q = mathsLevel(d, i, s);
+    seen.add(canon(q.q)); return q;
+  });
+}
+
 const cache = new Map<string, Question[]>();
 function base(cat: Exclude<Category, 'mix'>, d: Difficulty): Question[] {
   const k = cat + d; if (cache.has(k)) return cache.get(k)!;
-  const l = cat === 'maths' ? Array.from({ length: MAX_LEVELS }, (_, i) => mathsLevel(d, i))
-    : fromRows((cat === 'francais' ? francais : enigmes)[d]);
+  const l = cat === 'maths' ? mathsList(d)
+    : fromRows(cat === 'francais' ? [...francais[d], ...francaisPlus[d]] : [...enigmes[d], ...enigmesPlus[d]]);
   cache.set(k, l); return l;
 }
 /** Niveaux d'un jeu. « mix » alterne maths → français → énigmes. */
 export function getLevels(cat: Category, d: Difficulty): Question[] {
-  if (cat !== 'mix') return base(cat, d).slice(0, MAX_LEVELS);
+  const n = levelCount(cat);
+  if (cat !== 'mix') return base(cat, d).slice(0, n);
   const order = ['maths', 'francais', 'enigmes'] as const;
-  return Array.from({ length: MAX_LEVELS }, (_, i) => base(order[i % 3], d)[i]);
+  return Array.from({ length: n }, (_, i) => base(order[i % 3], d)[i]);
 }
 
-// ---------- Progression (localStorage) ----------
+// ---------- Progression (localStorage) : clés inchangées, rien n'est réinitialisé ----------
 export interface Progress { unlocked: number; stars: number[]; }
 const key = (c: Category, d: Difficulty) => `quiznigme:v2:${c}:${d}`;
 export function getProgress(c: Category, d: Difficulty): Progress {
-  try { return JSON.parse(localStorage.getItem(key(c, d)) ?? '') as Progress; } catch { return { unlocked: 1, stars: [] }; }
+  let p: Progress;
+  try { p = JSON.parse(localStorage.getItem(key(c, d)) ?? '') as Progress; } catch { p = { unlocked: 1, stars: [] }; }
+  p.stars = Array.isArray(p.stars) ? p.stars : [];
+  let last = -1; p.stars.forEach((s, i) => { if (s > 0) last = i; });
+  // Débloque le niveau suivant le dernier réussi (ex. ceux qui avaient fini le 50 voient le 51).
+  p.unlocked = Math.min(Math.max(p.unlocked || 1, last + 2), levelCount(c));
+  return p;
 }
 export function saveResult(c: Category, d: Difficulty, level: number, stars: number) {
   const p = getProgress(c, d);
   p.stars[level] = Math.max(p.stars[level] ?? 0, stars);
-  p.unlocked = Math.max(p.unlocked, Math.min(level + 2, MAX_LEVELS));
+  p.unlocked = Math.max(p.unlocked, Math.min(level + 2, levelCount(c)));
   try { localStorage.setItem(key(c, d), JSON.stringify(p)); } catch { /* ignoré */ }
 }
