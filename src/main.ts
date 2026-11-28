@@ -4,9 +4,11 @@ import './style.css';
 import gsap from 'gsap';
 import { Mascot, wait } from './mascot';
 import { sfx, sound } from './audio';
-import { Category, Difficulty, MAX_LEVELS } from './data/types';
+import { Category, Difficulty } from './data/types';
 import { currentTheme } from './seasons';
 import { getLevels, getProgress, saveResult } from './engine';
+import { openShare } from './share';
+import { loadUpdate, fmtDate } from './updates';
 
 const theme = currentTheme();
 const LOGO = `${import.meta.env.BASE_URL}${theme.logo}`;
@@ -16,6 +18,11 @@ const app = document.getElementById('app')!;
 app.innerHTML = `
 <div id="splash"><img src="${LOGO}" alt="Quiznigme" /><button class="btn indigo" id="go">Jouer</button></div>
 <main id="game" hidden><div id="cat"></div><p id="bubble" aria-live="polite"></p><p id="bar"></p><section id="stage"></section></main>
+<button id="menu" aria-label="Menu" aria-haspopup="true" aria-expanded="false">⋮</button>
+<div id="menupop" hidden>
+  <button class="mitem" id="mnotes"><b>+</b> Notes de mise à jour</button>
+  <button class="mitem" id="mshare"><b>➜</b> Partager mes scores</button>
+</div>
 <button id="mute" aria-label="Activer ou couper le son">🔊</button>`;
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const mascot = new Mascot($('cat'), theme);
@@ -44,8 +51,10 @@ function btn(o: Opt<unknown>, onClick: () => void) {
   b.onclick = () => { sfx.click(); onClick(); };
   return b;
 }
+let nav = 0;
 const reveal = async (els: HTMLElement[], gap = 260) => {
-  for (const e of els) { stage.append(e); gsap.from(e, { opacity: 0, y: 14, duration: 0.35 }); await wait(gap); }
+  const my = nav;
+  for (const e of els) { if (my !== nav) return; stage.append(e); gsap.from(e, { opacity: 0, y: 14, duration: 0.35 }); await wait(gap); }
 };
 const backBtn = (label: string, fn: () => void) => { const b = btn({ id: 0, label, cls: 'ghost' }, fn); return b; };
 
@@ -98,7 +107,7 @@ async function levelSelect(cat: Category, d: Difficulty, intro = true): Promise<
 
 async function playLevel(cat: Category, d: Difficulty, n: number): Promise<void> {
   const levels = getLevels(cat, d), q = levels[n];
-  stage.innerHTML = ''; bar.textContent = `Niveau ${n + 1} / ${MAX_LEVELS}`;
+  stage.innerHTML = ''; bar.textContent = `Niveau ${n + 1} / ${levels.length}`;
   const fb = document.createElement('p'); fb.className = 'feedback';
   await say(q.q, 22);
   let tries = 0;
@@ -112,7 +121,7 @@ async function playLevel(cat: Category, d: Difficulty, n: number): Promise<void>
       });
       return b;
     });
-    void reveal(els, 180).then(() => stage.append(fb));
+    void reveal(els, 180).then(() => { if (stage.contains(els[0])) stage.append(fb); });
   });
   stage.querySelectorAll('button').forEach(b => ((b as HTMLButtonElement).disabled = true));
   const stars = tries === 0 ? 3 : tries === 1 ? 2 : 1;
@@ -127,6 +136,30 @@ async function playLevel(cat: Category, d: Difficulty, n: number): Promise<void>
     void reveal(els, 150);
   });
   return next === 'next' ? playLevel(cat, d, n + 1) : levelSelect(cat, d, false);
+}
+
+const menuBtn = $('menu'), pop = $('menupop');
+const menuClose = () => { pop.hidden = true; menuBtn.setAttribute('aria-expanded', 'false'); };
+menuBtn.onclick = e => { e.stopPropagation(); sfx.click(); pop.hidden = !pop.hidden; menuBtn.setAttribute('aria-expanded', String(!pop.hidden)); };
+document.addEventListener('click', menuClose);
+$('mnotes').onclick = () => { sfx.click(); void openNotes(); };
+$('mshare').onclick = () => { sfx.click(); menuClose(); void openShare(); };
+
+async function openNotes(): Promise<void> {
+  const my = ++nav; menuClose();
+  if (!$('splash').hidden) { $('splash').hidden = true; $('game').hidden = false; }
+  stage.innerHTML = ''; bar.textContent = '';
+  const u = await loadUpdate(); if (my !== nav) return;
+  const head = document.createElement('h2'); head.className = 'ntitle'; head.textContent = 'Notes de mise à jour';
+  const sub = document.createElement('small'); sub.textContent = u.name + ' · ' + fmtDate(u.date); head.append(sub);
+  stage.append(head);
+  await say(u.say); if (my !== nav) return;
+  const src = import.meta.env.BASE_URL + u.image;
+  const fig = document.createElement('img'); fig.className = 'nimg'; fig.src = src; fig.alt = 'Image de la mise à jour : ' + u.name;
+  const dl = document.createElement('a'); dl.className = 'btn indigo'; dl.href = src; dl.download = src.split('/').pop() ?? 'maj.png';
+  dl.textContent = '⬇ Télécharger l’image'; dl.onclick = () => sfx.click();
+  fig.onerror = () => { fig.remove(); dl.remove(); };
+  await reveal([fig, dl, backBtn('← Retour au jeu', () => { void home(false); })], 250);
 }
 
 $('go').onclick = async () => {
