@@ -17,3 +17,4 @@ export async function loadUpdate(): Promise<Update> {
   } catch { /* version intégrée */ }
   return FALLBACK;
 }
+
