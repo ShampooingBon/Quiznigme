@@ -12,10 +12,12 @@ export class Mascot {
 
   constructor(root: HTMLElement, th: Theme) {
     const IMG = `${import.meta.env.BASE_URL}${th.cat}`, m = th.mouth;
+    const c = th.chin;
+    const back = c ? `<svg class="chinback" viewBox="0 0 ${th.w} ${th.h}" aria-hidden="true"><ellipse cx="${c.cx}" cy="${c.cy}" rx="${c.rx}" ry="${c.ry}" fill="${c.fill}"/></svg>` : '';
     const clips = th.eyes.map((e, i) => `<clipPath id="e${i}"><ellipse cx="${e.cx}" cy="${e.cy}" rx="${e.rx}" ry="${e.ry}"/></clipPath>`).join('');
     const lids = th.eyes.map((e, i) => { const x = e.cx - e.rx - 10, w = 2 * e.rx + 20, y = e.cy - e.ry - 8, h = 2 * e.ry + 16;
       return `<g clip-path="url(#e${i})"><g class="lid"><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${th.lidColor}"/><rect x="${x}" y="${y + h - 7}" width="${w}" height="7" fill="${th.lidLine}"/></g></g>`; }).join('');
-    root.innerHTML = `<div class="catbox" style="aspect-ratio:${th.w}/${th.h}"><img src="${IMG}" alt="Mascotte de Quiznigme" draggable="false"/>
+    root.innerHTML = `<div class="catbox" style="aspect-ratio:${th.w}/${th.h}">${back}<img src="${IMG}" alt="Mascotte de Quiznigme" draggable="false"/>
 <svg viewBox="0 0 ${th.w} ${th.h}" aria-hidden="true"><defs><clipPath id="cm"><ellipse cx="${m.cx}" cy="${m.cy}" rx="${m.rx}" ry="${m.ry}"/></clipPath>${clips}</defs>
 <g clip-path="url(#cm)"><rect x="${m.cx - m.rx - 10}" y="${m.originY - 18}" width="${2 * m.rx + 20}" height="${2 * m.ry + 30}" fill="${m.fill}"/><image class="jaw" href="${IMG}" width="${th.w}" height="${th.h}"/></g>${lids}</svg></div>`;
     this.originY = m.originY; this.cx = m.cx; this.lid = th.eyes[0].ry * 2 + 20;
