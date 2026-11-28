@@ -1,3 +1,5 @@
+import { inject } from '@vercel/analytics';
+inject();
 import '@fontsource/fredoka/400.css';
 import '@fontsource/fredoka/600.css';
 import './style.css';
